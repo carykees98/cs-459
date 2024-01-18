@@ -32,6 +32,14 @@ def main():
 			face_centerX = rollingAvg(face_centerX, x, 10.0)
 			face_centerY = rollingAvg(face_centerY, y, 10.0)
 
+			cv2.rectangle(
+				frame, # image to modify
+				(bounding_box.origin_x, bounding_box.origin_y), # first corner
+				(bounding_box.origin_x + bounding_box.width, bounding_box.origin_y + bounding_box.height), # second corner
+				(0, 255, 255), # color
+				2 # line width
+			)
+
 		# draw marker on face
 		cv2.line(
 			frame,
