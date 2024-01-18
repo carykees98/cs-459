@@ -29,6 +29,8 @@ def main():
 			maxSize=(600, 600) # maximum size (px) to detect a face
 		)
 
+
+
 		if(len(faces) > 0):
 			face_minX = faces[0][0]
 			face_minY = faces[0][1]
@@ -37,6 +39,10 @@ def main():
 
 			face_centerX = rollingAvg(face_centerX, (face_minX + face_maxX) / 2.0, 10)
 			face_centerY = rollingAvg(face_centerY, (face_minY + face_maxY) / 2.0, 10)
+
+			# print coordinates of face
+			print("X: ",face_centerX)
+			print("Y: ",face_centerY)
 
 			cv2.rectangle(
 				frame, # image to modify
