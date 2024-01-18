@@ -51,6 +51,8 @@ def main():
 		# display frame
 		cv2.imshow("title", frame)
 
+		print("x: ", str(face_centerX), ", y: ", str(face_centerY))
+
 		# Press Q for death
 		if cv2.waitKey(1) & 0xFF == ord('q'):
 			break

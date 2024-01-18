@@ -9,6 +9,9 @@ def main():
 	face_centerX = 0.0
 	face_centerY = 0.0
 
+	_, frame = camera.read()
+
+
 	while (True):
 		# get frame from camera
 		_, frame = camera.read()
@@ -54,8 +57,6 @@ def main():
 			(255, 255, 0),
 			2
 		)
-
-
 
 		# display frame
 		cv2.imshow("title", frame)
