@@ -5,6 +5,9 @@ def main():
 
 	face_model = cv2.CascadeClassifier(cv2.data.haarcascades + 
 			"haarcascade_frontalface_default.xml")
+	
+	face_centerX = 0.0
+	face_centerY = 0.0
 
 	while (True):
 		# get frame from camera
@@ -19,15 +22,40 @@ def main():
 			maxSize=(600, 600) # maximum size (px) to detect a face
 		)
 
-		for (face_x, face_y, face_w, face_h) in faces:
-			# draw face bounding box
+		if(len(faces) > 0):
+			face_minX = faces[0][0]
+			face_minY = faces[0][1]
+			face_maxX = face_minX + faces[0][2]
+			face_maxY = face_minY + faces[0][3]
+
+			face_centerX = rollingAvg(face_centerX, (face_minX + face_maxX) / 2.0, 10)
+			face_centerY = rollingAvg(face_centerY, (face_minY + face_maxY) / 2.0, 10)
+
 			cv2.rectangle(
 				frame, # image to modify
-				(face_x, face_y), # first corner
-				(face_x + face_w, face_y + face_h), # second corner
-				(255, 255, 0), # color
-				0 # line type
+				(face_minX, face_minY), # first corner
+				(face_maxX, face_maxY), # second corner
+				(0, 255, 255), # color
+				2 # line width
 			)
+
+		cv2.line(
+			frame,
+			(round(face_centerX - 20), round(face_centerY)),
+			(round(face_centerX + 20), round(face_centerY)),
+			(255, 255, 0),
+			2
+		)
+
+		cv2.line(
+			frame,
+			(round(face_centerX), round(face_centerY - 20)),
+			(round(face_centerX), round(face_centerY + 20)),
+			(255, 255, 0),
+			2
+		)
+
+
 
 		# display frame
 		cv2.imshow("title", frame)
@@ -37,6 +65,11 @@ def main():
 			break
 
 	camera.release()
+
+
+def rollingAvg(prev, current, n):
+	assert n > 0
+	return (prev * n + current) / (n + 1)
 
 if __name__ == "__main__":
 	try:
