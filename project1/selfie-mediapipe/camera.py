@@ -44,16 +44,6 @@ class FrameQuadrants:
 		return self.__height
 
 	def classify(self, x, y):
-		# centered
-		if(
-			x > self.__centerX - self.__tolerance and
-			x < self.__centerX + self.__tolerance and
-			y > self.__centerY - self.__tolerance and
-			y < self.__centerY + self.__tolerance
-		):
-			#return "center"
-			print()
-		
 		# left half
 		if(x < self.__centerX - self.__tolerance):
 			if(y < self.__centerY - self.__tolerance):
