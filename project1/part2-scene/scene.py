@@ -7,7 +7,7 @@ from time import sleep
 
 class VisionData:
 	def __init__(self):
-		self.__detections: []
+		self.__detections: list = []
 		self.__detections_lock = Lock()
 		self.__sentinel = False
 	
@@ -109,12 +109,12 @@ def main():
 		vision_thread.join()
 		print("Done")
 
-	except KeyboardInterrupt:
+	except:
 		print("Stopping vision thread...")
 		vision_data.tripSentinel()
 		vision_thread.join()
 		print("Main thread cleaned up.")
-		pass
+		raise
 
 if __name__ == "__main__":
 	try:

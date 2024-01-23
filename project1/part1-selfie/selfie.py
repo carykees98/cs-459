@@ -165,7 +165,7 @@ def main():
 		vision_thread: Thread = Thread(target=doVisionThread, args=(vision_data,))
 		vision_thread.start()
 
-		for i in range(0, 300):
+		for i in range(0, 3000):
 			sleep(0.1)
 			vision_data.setDisplayText(vision_data.getQuadrant())
 			print(vision_data.getQuadrant())
@@ -174,12 +174,12 @@ def main():
 		vision_thread.join()
 		print("Done")
 
-	except KeyboardInterrupt:
+	except:
 		print("Stopping vision thread...")
 		vision_data.tripSentinel()
 		vision_thread.join()
 		print("Main thread cleaned up.")
-		pass
+		raise
 
 if __name__ == "__main__":
 	try:
