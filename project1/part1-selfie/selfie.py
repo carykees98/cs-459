@@ -13,7 +13,6 @@ class VisionData:
 		self.__display_text = ""
 		self.__display_text_lock = Lock()
 		self.__sentinel = False
-		
 	
 	def setQuadrant(self, quadrant: str) -> None:
 		with self.__quadrant_lock:
@@ -149,8 +148,9 @@ def doVisionThread(vision_data: VisionData):
 		# display frame
 		cv2.imshow("selfie", frame)
 
+		# if you take this out it breaks the whole UI
 		if cv2.waitKey(1) & 0xFF == ord('q'):
-			print("CTRL-C to exit")
+			print("Press CTRL-C to exit")
 
 		# exit on sentinel
 		if(vision_data.checkSentinel()):
