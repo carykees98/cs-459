@@ -5,6 +5,7 @@ from mediapipe import Image, ImageFormat;
 from threading import Thread, Lock
 from time import sleep
 
+# Data to be shared between the main thread and the vision thread
 class VisionData:
 	def __init__(self):
 		self.__detections: list = []
