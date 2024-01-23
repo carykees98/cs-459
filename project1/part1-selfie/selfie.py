@@ -104,7 +104,7 @@ def doVisionThread(vision_data: VisionData):
 				x = box.origin_x + box.width / 2.0
 				y = box.origin_y + box.height / 2.0
 
-				# draw marker on face
+				# Draw marker on face
 				cv2.line(
 					frame,
 					(round(x - 20), round(y)),
@@ -119,11 +119,13 @@ def doVisionThread(vision_data: VisionData):
 					(255, 255, 0),
 					2
 				)
-				# show quadrant
+
+				# Display text from control thread
+				display_text = vision_data.getDisplayText()
 				# text shadow
 				cv2.putText(
 					frame,
-					frame_quads.classify(x, y),
+					display_text,
 					(50, 50),
 					0,
 					1.0,
@@ -133,7 +135,7 @@ def doVisionThread(vision_data: VisionData):
 				# text
 				cv2.putText(
 					frame,
-					frame_quads.classify(x, y),
+					display_text,
 					(50, 50),
 					0,
 					1.0,
@@ -163,8 +165,9 @@ def main():
 		vision_thread: Thread = Thread(target=doVisionThread, args=(vision_data,))
 		vision_thread.start()
 
-		for i in range(0, 30):
-			sleep(0.5)
+		for i in range(0, 300):
+			sleep(0.1)
+			vision_data.setDisplayText(vision_data.getQuadrant())
 			print(vision_data.getQuadrant())
 
 		vision_data.tripSentinel()
