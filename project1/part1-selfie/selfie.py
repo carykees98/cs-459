@@ -1,7 +1,8 @@
 import cv2
-from mediapipe.tasks.python import BaseOptions;
-from mediapipe.tasks.python.vision import FaceDetector, FaceDetectorOptions;
-from mediapipe import Image, ImageFormat;
+from mediapipe.tasks.python import BaseOptions
+from mediapipe.tasks.python.vision import FaceDetector, FaceDetectorOptions
+from mediapipe import Image, ImageFormat
+import pyttsx3
 from threading import Thread, Lock
 from time import sleep
 
@@ -13,6 +14,7 @@ class VisionData:
 		self.__display_text = ""
 		self.__display_text_lock = Lock()
 		self.__sentinel = False
+		self.__up = False
 	
 	def setQuadrant(self, quadrant: str) -> None:
 		with self.__quadrant_lock:
@@ -35,6 +37,12 @@ class VisionData:
 
 	def checkSentinel(self) -> bool:
 		return self.__sentinel
+	
+	def tripStarted(self) -> None:
+		self.__up = True
+
+	def isStarted(self) -> bool:
+		return self.__up
 
 # Provides functionality for classifying the quadrant that a face is in
 class FrameQuadrants:
@@ -58,6 +66,7 @@ class FrameQuadrants:
 				return "topleft"
 			elif(y > self.__centerY + self.__tolerance):
 				return "bottomleft"
+			
 			return "middleleft"
 		# right half
 		elif(x > self.__centerX + self.__tolerance):
@@ -65,14 +74,26 @@ class FrameQuadrants:
 				return "topright"
 			elif(y > self.__centerY + self.__tolerance):
 				return "bottomright"
+			
 			return "middleright"
 		
-		# close to center
+		# middle vertical but not horizontal
 		if(y < self.__centerY - self.__tolerance):
-			return "topcenter"
+			return "topmiddle"
 		elif(y > self.__centerY + self.__tolerance):
-			return "bottomcenter"
+			return "bottommiddle"
+		
 		return "center"
+	
+# Text to speech wrapper
+class TextToSpeech:
+	def __init__(self):
+		self.__tts = pyttsx3.init()
+
+	def say(self, text: str):
+		print("[TTS] " + text)
+		self.__tts.say(text)
+		self.__tts.runAndWait()
 
 # Vision thread tasks
 def doVisionThread(vision_data: VisionData):
@@ -87,6 +108,8 @@ def doVisionThread(vision_data: VisionData):
 			base_options=BaseOptions(model_asset_path="model/blazeface_sr.tflite")
 		)
 	)
+
+	vision_data.tripStarted()
 	
 	while (True):
 		# Get a single frame from the camera
@@ -161,14 +184,30 @@ def doVisionThread(vision_data: VisionData):
 # Main thread
 def main():
 	try:
+		tts: TextToSpeech = TextToSpeech()
 		vision_data: VisionData = VisionData()
 		vision_thread: Thread = Thread(target=doVisionThread, args=(vision_data,))
 		vision_thread.start()
 
-		for i in range(0, 3000):
+		tts.say("Just a second while the camera starts up...")
+
+		while(not vision_data.isStarted()):
 			sleep(0.1)
-			vision_data.setDisplayText(vision_data.getQuadrant())
+
+		if(vision_data.getQuadrant() == "none"):
+			tts.say(
+				"Your face doesn't seem to be in frame." + 
+		   		"Try moving your head around and we'll tell you once we can see you."
+		   )
+		else:
+			tts.say(
+				"You're in frame! Now we'll guide you to the center."
+			)
+
+		while(vision_data.getQuadrant() != "center"):
 			print(vision_data.getQuadrant())
+			vision_data.setDisplayText(vision_data.getQuadrant())
+			sleep(0.5)
 
 		vision_data.tripSentinel()
 		vision_thread.join()
