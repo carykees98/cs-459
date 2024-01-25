@@ -6,6 +6,8 @@ import pyttsx3
 from threading import Thread, Lock
 from time import sleep
 
+# ========== Class definitions ==========
+
 # Data to be shared between the main thread and the vision thread
 class VisionData:
 	def __init__(self):
@@ -94,6 +96,8 @@ class TextToSpeech:
 		print("[TTS] " + text)
 		self.__tts.say(text)
 		self.__tts.runAndWait()
+
+# ========== End class definitions ==========
 
 # Vision thread tasks
 def doVisionThread(vision_data: VisionData):
