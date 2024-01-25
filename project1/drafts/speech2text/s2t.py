@@ -44,7 +44,8 @@ while(1):
             audio2 = r.listen(source2)
              
             # Using google to recognize audio
-            MyText = r.recognize_google(audio2)
+            #MyText = r.recognize_google(audio2)
+            MyText = r.recognize_whisper(audio2)
             MyText = MyText.lower()
  
             print("Did you say ",MyText)
