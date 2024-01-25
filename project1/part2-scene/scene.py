@@ -22,7 +22,7 @@ class VisionData:
 		self.__detections: list[SceneObject] = []
 		self.__detections_lock = Lock()
 		self.__sentinel = False
-		self.__up = False
+		self.__available = False
 	
 	def setDetections(self, detections):
 		with self.__detections_lock:
@@ -38,11 +38,11 @@ class VisionData:
 	def checkSentinel(self) -> bool:
 		return self.__sentinel
 	
-	def tripStarted(self) -> None:
-		self.__up = True
+	def signalAvailable(self) -> None:
+		self.__available = True
 
-	def isStarted(self) -> bool:
-		return self.__up
+	def isAvailable(self) -> bool:
+		return self.__available
 
 # Text to speech wrapper
 class TextToSpeech:
@@ -65,8 +65,6 @@ def doVisionThread(vision_data: VisionData):
 			base_options=BaseOptions(model_asset_path="model/efficientdet_lite0.tflite")
 		)
 	)
-
-	vision_data.tripStarted()
 
 	while (True):
 		# get frame from camera
@@ -124,6 +122,7 @@ def doVisionThread(vision_data: VisionData):
 					)
 		
 		vision_data.setDetections(scene_objects)
+		vision_data.signalAvailable()
 
 		# display frame
 		cv2.imshow("scene", frame)
@@ -148,9 +147,9 @@ def main():
 
 		tts.say("Just a second while the camera starts up...")
 
-		while(not vision_data.isStarted()):
-			sleep(0.1)
-
+		while(not vision_data.isAvailable()):
+			sleep(1.0)
+		
 		for i in range(0, 15):
 			sleep(2.0)
 			print(vision_data.getDetections())

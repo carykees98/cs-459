@@ -16,7 +16,7 @@ class VisionData:
 		self.__display_text = ""
 		self.__display_text_lock = Lock()
 		self.__sentinel = False
-		self.__up = False
+		self.__available = False
 	
 	def setQuadrant(self, quadrant: str) -> None:
 		with self.__quadrant_lock:
@@ -40,11 +40,11 @@ class VisionData:
 	def checkSentinel(self) -> bool:
 		return self.__sentinel
 	
-	def tripStarted(self) -> None:
-		self.__up = True
+	def signalAvailable(self) -> None:
+		self.__available = True
 
-	def isStarted(self) -> bool:
-		return self.__up
+	def isAvailable(self) -> bool:
+		return self.__available
 
 # Provides functionality for classifying the quadrant that a face is in
 class FrameQuadrants:
@@ -112,8 +112,6 @@ def doVisionThread(vision_data: VisionData):
 			base_options=BaseOptions(model_asset_path="model/blazeface_sr.tflite")
 		)
 	)
-
-	vision_data.tripStarted()
 	
 	while (True):
 		# Get a single frame from the camera
@@ -172,6 +170,8 @@ def doVisionThread(vision_data: VisionData):
 		else:
 			vision_data.setQuadrant("none")
 
+		vision_data.signalAvailable()
+
 		# display frame
 		cv2.imshow("selfie", frame)
 
@@ -195,18 +195,18 @@ def main():
 
 		tts.say("Just a second while the camera starts up...")
 
-		while(not vision_data.isStarted()):
-			sleep(0.1)
+		while(not vision_data.isAvailable()):
+			sleep(1.0)
 
 		if(vision_data.getQuadrant() == "none"):
-			tts.say(
-				"Your face doesn't seem to be in frame." + 
-		   		"Try moving your head around and we'll tell you once we can see you."
-		   )
-		else:
-			tts.say(
-				"You're in frame! Now we'll guide you to the center."
-			)
+			tts.say("Your face doesn't seem to be in frame")
+			tts.say("Try moving your head around and we'll tell you once we can see you")
+			while(vision_data.getQuadrant() == "none"):
+				sleep(0.1)
+		
+		tts.say(
+			"You're in frame! Now we'll guide you to the center."
+		)
 
 		while(vision_data.getQuadrant() != "center"):
 			print(vision_data.getQuadrant())
