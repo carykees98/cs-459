@@ -66,27 +66,57 @@ class FrameQuadrants:
 		# left half
 		if(x < self.__centerX - self.__tolerance):
 			if(y < self.__centerY - self.__tolerance):
-				return "topleft"
+				return "top_left"
 			elif(y > self.__centerY + self.__tolerance):
-				return "bottomleft"
+				return "bottom_left"
 			
-			return "middleleft"
+			return "middle_left"
 		# right half
 		elif(x > self.__centerX + self.__tolerance):
 			if(y < self.__centerY - self.__tolerance):
-				return "topright"
+				return "top_right"
 			elif(y > self.__centerY + self.__tolerance):
-				return "bottomright"
+				return "bottom_right"
 			
-			return "middleright"
+			return "middle_right"
 		
 		# middle vertical but not horizontal
 		if(y < self.__centerY - self.__tolerance):
-			return "topmiddle"
+			return "top_middle"
 		elif(y > self.__centerY + self.__tolerance):
-			return "bottommiddle"
+			return "bottom_middle"
 		
-		return "center"
+		return "middle_middle"
+	
+	# Gets the direction of movement required to position the user in a quadrant
+	def getMovement(current: str, target: str):
+		current_y = current.split("_", 2)[0]
+		current_x = current.split("_", 2)[1]
+		target_y = target.split("_", 2)[0]
+		target_x = target.split("_", 2)[1]
+
+		# move horizontally first
+		if(current_x != target_x):
+			match current_x:
+				case "left":
+					return "right"
+				case "right":
+					return "left"
+				case _:
+					if(target_x == "left"):
+						return "left"
+					return "right"
+		else: # move vertically once centered horizontally
+			match current_y:
+				case "bottom":
+					return "up"
+				case "top":
+					return "down"
+				case _:
+					if(target_y == "top"):
+						return "up"
+					return "down"
+
 	
 # Text to speech wrapper
 class TextToSpeech:
@@ -230,7 +260,7 @@ def main():
 			"You're in frame! Now we'll guide you to the center."
 		)
 
-		while(vision_data.getQuadrant() != "center"):
+		while(vision_data.getQuadrant() != "middle_middle"):
 			print(vision_data.getQuadrant())
 			vision_data.setDisplayText(vision_data.getQuadrant())
 			sleep(0.5)
