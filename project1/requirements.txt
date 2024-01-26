@@ -1,3 +1,5 @@
 python-opencv
 mediapipe
 pyttsx3
+speechrecognition
+openai-whisper
