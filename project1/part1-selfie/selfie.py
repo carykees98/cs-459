@@ -3,6 +3,7 @@ from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import FaceDetector, FaceDetectorOptions
 from mediapipe import Image, ImageFormat
 import pyttsx3
+import speech_recognition as sr
 from threading import Thread, Lock
 from time import sleep
 
@@ -92,15 +93,34 @@ class TextToSpeech:
 	def __init__(self):
 		self.__tts = pyttsx3.init()
 
-	def say(self, text: str):
-		print("[TTS] " + text)
+	# Speak a phrase
+	def say(self, text: str) -> None:
+		print("[TTS] Speaking phrase \"" + text + "\".")
 		self.__tts.say(text)
 		self.__tts.runAndWait()
+
+# Speech to text wrapper
+class SpeechToText:
+	def __init__(self):
+		self.__speech = sr.Recognizer()
+	
+	# Listen and transcribe a phrase
+	def listen(self) -> str:
+		print("[STT] Listening...")
+		with sr.Microphone as input:
+			self.__speech.adjust_for_ambient_noise(input, duration=0.25)
+			recorded_audio = self.__speech.listen(input)
+			phrase = self.__speech.recognize_whisper(recorded_audio).lower()
+			print("[STT] Transcribed phrase \"" + phrase + "\"")
+			return 
+
 
 # ========== End class definitions ==========
 
 # Vision thread tasks
 def doVisionThread(vision_data: VisionData):
+	print("[Vision] Starting vision thread...")
+
 	# Set up camera input and frame parameters
 	camera = cv2.VideoCapture(0)
 	_, frame = camera.read()
@@ -112,7 +132,8 @@ def doVisionThread(vision_data: VisionData):
 			base_options=BaseOptions(model_asset_path="model/blazeface_sr.tflite")
 		)
 	)
-	
+
+	print("[Vision] Running object detection.")
 	while (True):
 		# Get a single frame from the camera
 		_, frame = camera.read()
@@ -188,6 +209,7 @@ def doVisionThread(vision_data: VisionData):
 # Main thread
 def main():
 	try:
+		print("[Control] Starting selfie application.")
 		tts: TextToSpeech = TextToSpeech()
 		vision_data: VisionData = VisionData()
 		vision_thread: Thread = Thread(target=doVisionThread, args=(vision_data,))
@@ -215,13 +237,13 @@ def main():
 
 		vision_data.tripSentinel()
 		vision_thread.join()
-		print("Done")
+		print("[Control] Done")
 
 	except:
-		print("Stopping vision thread...")
+		print("[Shutdown] Stopping vision thread...")
 		vision_data.tripSentinel()
 		vision_thread.join()
-		print("Main thread cleaned up.")
+		print("[Shutdown] Main thread cleaned up.")
 		raise
 
 if __name__ == "__main__":
