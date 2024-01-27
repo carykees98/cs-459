@@ -53,8 +53,8 @@ class TextToSpeech:
 	# Speak a phrase
 	def say(self, text: str) -> None:
 		print("[TTS] Speaking phrase \"" + text + "\".")
-		self.__tts.say(text)
-		self.__tts.runAndWait()
+		#self.__tts.say(text)
+		#self.__tts.runAndWait()
 
 # Speech to text wrapper
 class SpeechToText:
@@ -64,7 +64,7 @@ class SpeechToText:
 	# Listen and transcribe a phrase
 	def listen(self) -> str:
 		print("[STT] Listening...")
-		with sr.Microphone as input:
+		with sr.Microphone() as input:
 			self.__speech.adjust_for_ambient_noise(input, duration=0.25)
 			recorded_audio = self.__speech.listen(input)
 			phrase = self.__speech.recognize_whisper(recorded_audio).lower()
@@ -168,8 +168,8 @@ def main():
 		vision_thread: Thread = Thread(target=doVisionThread, args=(vision_data,))
 		vision_thread.start()
 
+		# Wait on vision thread
 		tts.say("Just a second while the camera starts up...")
-
 		while(not vision_data.isAvailable()):
 			sleep(1.0)
 		
