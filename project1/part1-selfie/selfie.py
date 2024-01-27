@@ -99,35 +99,35 @@ class FrameQuadrants:
 		if(current_x != target_x):
 			match current_x:
 				case "left":
-					return "right"
+					return "Left"
 				case "right":
-					return "left"
+					return "Right"
 				case _:
-					if(target_x == "left"):
-						return "left"
-					return "right"
+					if(target_x == "Left"):
+						return "Right"
+					return "Left"
 		else: # move vertically once centered horizontally
 			match current_y:
 				case "bottom":
-					return "up"
+					return "Up"
 				case "top":
-					return "down"
+					return "Down"
 				case _:
 					if(target_y == "top"):
-						return "up"
-					return "down"
-
+						return "Up"
+					return "Down"
 	
 # Text to speech wrapper
 class TextToSpeech:
 	def __init__(self):
 		self.__tts = pyttsx3.init()
+		self.__tts.setProperty("rate", 300)
 
 	# Speak a phrase
 	def say(self, text: str) -> None:
 		print("[TTS] Speaking phrase \"" + text + "\".")
-		self.__tts.say(text)
-		self.__tts.runAndWait()
+		#self.__tts.say(text)
+		#self.__tts.runAndWait()
 
 # Speech to text wrapper
 class SpeechToText:
@@ -137,13 +137,16 @@ class SpeechToText:
 	# Listen and transcribe a phrase
 	def listen(self) -> str:
 		print("[STT] Listening...")
-		with sr.Microphone as input:
+		with sr.Microphone() as input:
 			self.__speech.adjust_for_ambient_noise(input, duration=0.25)
 			recorded_audio = self.__speech.listen(input)
 			phrase = self.__speech.recognize_whisper(recorded_audio).lower()
 			print("[STT] Transcribed phrase \"" + phrase + "\"")
-			return 
-
+			return SpeechToText.sanitize(phrase)
+	
+	# Remove punctuation and leading/trailing whitespace from a transcription
+	def sanitize(phrase: str) -> str:
+		return phrase.replace(".", "").replace("!", "").replace("?", "").strip()
 
 # ========== End class definitions ==========
 
@@ -163,7 +166,7 @@ def doVisionThread(vision_data: VisionData):
 		)
 	)
 
-	print("[Vision] Running object detection.")
+	print("[Vision] Running face detection.")
 	while (True):
 		# Get a single frame from the camera
 		_, frame = camera.read()
@@ -241,29 +244,63 @@ def main():
 	try:
 		print("[Control] Starting selfie application.")
 		tts: TextToSpeech = TextToSpeech()
+		stt: SpeechToText = SpeechToText()
 		vision_data: VisionData = VisionData()
 		vision_thread: Thread = Thread(target=doVisionThread, args=(vision_data,))
 		vision_thread.start()
 
+		# Wait on vision thread
 		tts.say("Just a second while the camera starts up...")
-
 		while(not vision_data.isAvailable()):
 			sleep(1.0)
 
+		# Guide user to frame
 		if(vision_data.getQuadrant() == "none"):
-			tts.say("Your face doesn't seem to be in frame")
-			tts.say("Try moving your head around and we'll tell you once we can see you")
+			tts.say("Your face isn't in frame")
+			tts.say("Try moving your head up, down, left, and right")
 			while(vision_data.getQuadrant() == "none"):
 				sleep(0.1)
 		
-		tts.say(
-			"You're in frame! Now we'll guide you to the center."
-		)
+		# Prompt user for face location
+		tts.say("You're in frame! Where would you like your face to be? You can say things like, top left, bottom right, center")
+		target_quadrant: str = ""
+		while(True):
+			
+			user_choice: str = stt.listen()
+			match user_choice:
+				case "top left":
+					tts.say("Top left")
+					target_quadrant = "top_left"
+					break
+				case "top right":
+					tts.say("Top right")
+					target_quadrant = "top_right"
+					break
+				case "bottom left":
+					tts.say("Bottom left")
+					target_quadrant = "bottom_right"
+					break
+				case "bottom right":
+					tts.say("Bottom right")
+					target_quadrant = "bottom_right"
+					break
+				case "center":
+					tts.say("Center")
+					target_quadrant = "middle_middle"
+					break
+				case _:
+					tts.say("Sorry, we couldn't recognize what you said")
 
-		while(vision_data.getQuadrant() != "middle_middle"):
-			print(vision_data.getQuadrant())
-			vision_data.setDisplayText(vision_data.getQuadrant())
-			sleep(0.5)
+
+		while(vision_data.getQuadrant() != target_quadrant):
+			current_quadrant: str = vision_data.getQuadrant()
+			vision_data.setDisplayText(
+				FrameQuadrants.getMovement(current_quadrant, target_quadrant)
+			)
+			tts.say(FrameQuadrants.getMovement(current_quadrant, target_quadrant))
+			sleep(0.1)
+
+		tts.say("Perfect. Taking a picture now.")
 
 		vision_data.tripSentinel()
 		vision_thread.join()
