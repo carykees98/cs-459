@@ -16,6 +16,7 @@ class SceneObject:
 	x: float
 	y: float
 	area: int
+	quadrant: str
 
 # Data to be shared between the main thread and the vision thread
 class VisionData:
@@ -44,6 +45,76 @@ class VisionData:
 
 	def isAvailable(self) -> bool:
 		return self.__available
+	
+# Provides functionality for classifying the quadrant that a face is in
+class FrameQuadrants:
+	def __init__(self, width, height, tolerance = 50):
+		self.__width = width
+		self.__height = height
+		self.__centerX = width / 2
+		self.__centerY = height / 2
+		self.__tolerance = tolerance
+
+	def getWidth(self) -> int:
+		return self.__width
+	
+	def getHeight(self) -> int:
+		return self.__height
+
+	def classify(self, x, y) -> str:
+		# left half
+		if(x < self.__centerX - self.__tolerance):
+			if(y < self.__centerY - self.__tolerance):
+				return "top_left"
+			elif(y > self.__centerY + self.__tolerance):
+				return "bottom_left"
+			
+			return "middle_left"
+		# right half
+		elif(x > self.__centerX + self.__tolerance):
+			if(y < self.__centerY - self.__tolerance):
+				return "top_right"
+			elif(y > self.__centerY + self.__tolerance):
+				return "bottom_right"
+			
+			return "middle_right"
+		
+		# middle vertical but not horizontal
+		if(y < self.__centerY - self.__tolerance):
+			return "top_middle"
+		elif(y > self.__centerY + self.__tolerance):
+			return "bottom_middle"
+		
+		return "middle_middle"
+	
+	# Gets the direction of movement required to position the user in a quadrant
+	def getMovement(current: str, target: str):
+		current_y = current.split("_", 2)[0]
+		current_x = current.split("_", 2)[1]
+		target_y = target.split("_", 2)[0]
+		target_x = target.split("_", 2)[1]
+
+		# move horizontally first
+		if(current_x != target_x):
+			match current_x:
+				case "left":
+					return "Left"
+				case "right":
+					return "Right"
+				case _:
+					if(target_x == "Left"):
+						return "Right"
+					return "Left"
+		else: # move vertically once centered horizontally
+			match current_y:
+				case "bottom":
+					return "Up"
+				case "top":
+					return "Down"
+				case _:
+					if(target_y == "top"):
+						return "Up"
+					return "Down"
 
 # Text to speech wrapper
 class TextToSpeech:
@@ -53,8 +124,8 @@ class TextToSpeech:
 	# Speak a phrase
 	def say(self, text: str) -> None:
 		print("[TTS] Speaking phrase \"" + text + "\".")
-		#self.__tts.say(text)
-		#self.__tts.runAndWait()
+		self.__tts.say(text)
+		self.__tts.runAndWait()
 
 # Speech to text wrapper
 class SpeechToText:
@@ -69,8 +140,18 @@ class SpeechToText:
 			recorded_audio = self.__speech.listen(input)
 			phrase = self.__speech.recognize_whisper(recorded_audio).lower()
 			print("[STT] Transcribed phrase \"" + phrase + "\"")
-			return 
+			return
 
+# Contains useful functions for sorting objects in the control thread
+class ObjectHelper:
+	# Gets the most apparent instance of an object in the scene
+	def getMostApparent(scene_objects: list[SceneObject], name: str) -> SceneObject:
+		max_area: int = 0
+		candidate_obj: SceneObject = SceneObject("", 0.0, 0.0, 0, "")
+		for o in scene_objects:
+			if(o.name == name and o.area >= max_area):
+				candidate_obj = o
+		return candidate_obj
 
 # ========== End class definitions ==========
 
@@ -78,9 +159,12 @@ class SpeechToText:
 def doVisionThread(vision_data: VisionData):
 	print("[Vision] Starting vision thread...")
 
+	# Set up camera input and frame parameters
 	camera = cv2.VideoCapture(0)
 	_, frame = camera.read()
+	frame_quads: FrameQuadrants = FrameQuadrants(frame.shape[1], frame.shape[0])
 
+	# Set up object detection
 	scene_model = ObjectDetector.create_from_options(
 		ObjectDetectorOptions(
 			base_options=BaseOptions(model_asset_path="model/efficientdet_lite0.tflite")
@@ -89,31 +173,29 @@ def doVisionThread(vision_data: VisionData):
 
 	print("[Vision] Running object detection.")
 	while (True):
-		# get frame from camera
+		# Get a single frame from the camera
 		_, frame = camera.read()
 
-		# detect objects
+		# Detect objects in the frame
 		scene_detections = scene_model.detect(
 			Image(image_format=ImageFormat.SRGB, data=frame)
 		)
 
-		
+		# Screen detections and populate scene object list
 		scene_objects: list[SceneObject] = []
-		# get detections
 		for detection in scene_detections.detections:
 			for category in detection.categories:
 				if category.score > 0.4:
 					box = detection.bounding_box
-					
 					scene_objects.append(
 						SceneObject(
 							category.category_name,
 							(box.origin_x + box.width) / 2,
 							(box.origin_y + box.height) / 2,
-							(box.width * box.height)
+							(box.width * box.height),
+							frame_quads.classify((box.origin_x + box.width) / 2, (box.origin_y + box.height) / 2)
 						)
 					)
-
 					# bounding box
 					cv2.rectangle(
 						frame,
@@ -143,17 +225,18 @@ def doVisionThread(vision_data: VisionData):
 						2
 					)
 		
+		# Update shared detection information for control thread
 		vision_data.setDetections(scene_objects)
 		vision_data.signalAvailable()
 
-		# display frame
+		# Display frame for debug
 		cv2.imshow("scene", frame)
 
-		# if you take this out it breaks the whole UI
+		# If you take this out it breaks the whole UI
 		if cv2.waitKey(1) & 0xFF == ord('q'):
 			print("Press CTRL-C to exit")
 		
-		# exit on sentinel
+		# Exit on sentinel
 		if(vision_data.checkSentinel()):
 			camera.release()
 			cv2.destroyAllWindows()
@@ -164,20 +247,75 @@ def main():
 	try:
 		print("[Control] Starting scene application.")
 		tts: TextToSpeech = TextToSpeech()
+		stt: SpeechToText = SpeechToText()
 		vision_data: VisionData = VisionData()
 		vision_thread: Thread = Thread(target=doVisionThread, args=(vision_data,))
 		vision_thread.start()
 
 		# Wait on vision thread
-		tts.say("Just a second while the camera starts up...")
+		tts.say("Just a second while the camera starts up")
 		while(not vision_data.isAvailable()):
 			sleep(1.0)
-		
-		for i in range(0, 15):
-			sleep(2.0)
-			print(vision_data.getDetections())
-			detections = vision_data.getDetections()
 
+		# Get objects in scene
+		tts.say("Looking at the scene")
+		scene_names: list[str] = []
+		for o in vision_data.getDetections():
+			if(scene_names.count(o.name) == 0):
+				scene_names.append(o.name)
+
+		# Have user pick an object
+		tts.say("I see: " + " ".join(scene_names) + ". What would you like to take a picture of?")
+		target_object: str = ""
+		while(True):
+			user_choice: str = stt.listen()
+			if(scene_names.count(user_choice) > 0):
+				target_object = user_choice
+				break
+			else:
+				tts.say("Sorry, we couldn't recognize what you said")
+		tts.say(target_object)
+
+		# Have user pick a position
+		tts.say("Where would you like the " + target_object + "to be? You can say things like, top left, bottom right, center")
+		target_quadrant: str = ""
+		while(True):
+			user_choice: str = stt.listen()
+			match user_choice:
+				case "top left":
+					tts.say("Top left")
+					target_quadrant = "top_left"
+					break
+				case "top right":
+					tts.say("Top right")
+					target_quadrant = "top_right"
+					break
+				case "bottom left":
+					tts.say("Bottom left")
+					target_quadrant = "bottom_right"
+					break
+				case "bottom right":
+					tts.say("Bottom right")
+					target_quadrant = "bottom_right"
+					break
+				case "center":
+					tts.say("Center")
+					target_quadrant = "middle_middle"
+					break
+				case _:
+					tts.say("Sorry, we couldn't recognize what you said")
+		tts.say(target_quadrant)
+
+		# Guide object to proper position
+		while(True):
+			scene_objects: list[SceneObject] = vision_data.getDetections()
+			tracked_object: SceneObject = ObjectHelper.getMostApparent(scene_objects, target_object)
+			if(target_quadrant.quadrant == target_quadrant):
+				break
+
+			print(tracked_object.quadrant)
+			tts.say(FrameQuadrants.getMovement(tracked_object.quadrant, target_quadrant))
+			sleep(0.1)
 
 		vision_data.tripSentinel()
 		vision_thread.join()

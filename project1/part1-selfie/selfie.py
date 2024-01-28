@@ -226,14 +226,14 @@ def doVisionThread(vision_data: VisionData):
 
 		vision_data.signalAvailable()
 
-		# display frame
+		# Display frame for debug
 		cv2.imshow("selfie", frame)
 
-		# if you take this out it breaks the whole UI
+		# If you take this out it breaks the whole UI
 		if cv2.waitKey(1) & 0xFF == ord('q'):
 			print("Press CTRL-C to exit")
 
-		# exit on sentinel
+		# Exit on sentinel
 		if(vision_data.checkSentinel()):
 			camera.release()
 			cv2.destroyAllWindows()
@@ -265,7 +265,6 @@ def main():
 		tts.say("You're in frame! Where would you like your face to be? You can say things like, top left, bottom right, center")
 		target_quadrant: str = ""
 		while(True):
-			
 			user_choice: str = stt.listen()
 			match user_choice:
 				case "top left":

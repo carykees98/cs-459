@@ -3,3 +3,4 @@ mediapipe
 pyttsx3
 speechrecognition
 openai-whisper
+soundfile
