@@ -5,6 +5,7 @@ from mediapipe import Image, ImageFormat
 import pyttsx3
 import speech_recognition as sr
 from threading import Thread, Lock
+from datetime import datetime
 from time import sleep
 
 # ========== Class definitions ==========
@@ -18,6 +19,7 @@ class VisionData:
 		self.__display_text_lock = Lock()
 		self.__sentinel = False
 		self.__available = False
+		self.__save_image_flag = False
 	
 	def setQuadrant(self, quadrant: str) -> None:
 		with self.__quadrant_lock:
@@ -46,10 +48,20 @@ class VisionData:
 
 	def isAvailable(self) -> bool:
 		return self.__available
+	
+	def requestSaveImage(self) -> None:
+		self.__save_image_flag = True
+	
+	def resetSaveImage(self) -> None:
+		self.__save_image_flag = False
+
+	def checkSaveImage(self) -> bool:
+		return self.__save_image_flag
+
 
 # Provides functionality for classifying the quadrant that a face is in
 class FrameQuadrants:
-	def __init__(self, width, height, tolerance = 50):
+	def __init__(self, width, height, tolerance = 60):
 		self.__width = width
 		self.__height = height
 		self.__centerX = width / 2
@@ -103,7 +115,7 @@ class FrameQuadrants:
 				case "right":
 					return "Right"
 				case _:
-					if(target_x == "Left"):
+					if(target_x == "left"):
 						return "Right"
 					return "Left"
 		else: # move vertically once centered horizontally
@@ -121,13 +133,12 @@ class FrameQuadrants:
 class TextToSpeech:
 	def __init__(self):
 		self.__tts = pyttsx3.init()
-		self.__tts.setProperty("rate", 300)
 
 	# Speak a phrase
 	def say(self, text: str) -> None:
 		print("[TTS] Speaking phrase \"" + text + "\".")
-		#self.__tts.say(text)
-		#self.__tts.runAndWait()
+		self.__tts.say(text)
+		self.__tts.runAndWait()
 
 # Speech to text wrapper
 class SpeechToText:
@@ -138,9 +149,9 @@ class SpeechToText:
 	def listen(self) -> str:
 		print("[STT] Listening...")
 		with sr.Microphone() as input:
-			self.__speech.adjust_for_ambient_noise(input, duration=0.25)
+			self.__speech.adjust_for_ambient_noise(input, duration=0.3)
 			recorded_audio = self.__speech.listen(input)
-			phrase = self.__speech.recognize_whisper(recorded_audio).lower()
+			phrase = self.__speech.recognize_whisper(recorded_audio, language="english").lower()
 			print("[STT] Transcribed phrase \"" + phrase + "\"")
 			return SpeechToText.sanitize(phrase)
 	
@@ -175,6 +186,11 @@ def doVisionThread(vision_data: VisionData):
 		faces = face_model.detect(
 			Image(image_format=ImageFormat.SRGB, data=frame)
 		)
+
+		if(vision_data.checkSaveImage()):
+			print("[Vision] Saving image...")
+			cv2.imwrite(datetime.now().strftime("%Y%m%d%H%M%S.jpg"), frame)
+			vision_data.resetSaveImage()
 
 		# get face center
 		if(len(faces.detections) > 0):
@@ -250,14 +266,14 @@ def main():
 		vision_thread.start()
 
 		# Wait on vision thread
-		tts.say("Just a second while the camera starts up...")
+		tts.say("Just a second while the camera starts up")
 		while(not vision_data.isAvailable()):
 			sleep(1.0)
 
 		# Guide user to frame
 		if(vision_data.getQuadrant() == "none"):
 			tts.say("Your face isn't in frame")
-			tts.say("Try moving your head up, down, left, and right")
+			tts.say("Try moving your head slowly up down left and right")
 			while(vision_data.getQuadrant() == "none"):
 				sleep(0.1)
 		
@@ -288,9 +304,9 @@ def main():
 					target_quadrant = "middle_middle"
 					break
 				case _:
-					tts.say("Sorry, we couldn't recognize what you said")
+					tts.say("Sorry, we didn't quite get that, please try again")
 
-
+		# Guide user to desired quadrant
 		while(vision_data.getQuadrant() != target_quadrant):
 			current_quadrant: str = vision_data.getQuadrant()
 			vision_data.setDisplayText(
@@ -299,8 +315,14 @@ def main():
 			tts.say(FrameQuadrants.getMovement(current_quadrant, target_quadrant))
 			sleep(0.1)
 
-		tts.say("Perfect. Taking a picture now.")
+		# Take a picture
+		tts.say("Perfect. Taking a picture now")
+		vision_data.requestSaveImage()
+		while(vision_data.checkSaveImage()):
+			sleep(0.1)
+		tts.say("Done saving the picture")
 
+		# Clean up
 		vision_data.tripSentinel()
 		vision_thread.join()
 		print("[Control] Done")

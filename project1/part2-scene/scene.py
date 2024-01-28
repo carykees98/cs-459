@@ -48,7 +48,7 @@ class VisionData:
 	
 # Provides functionality for classifying the quadrant that a face is in
 class FrameQuadrants:
-	def __init__(self, width, height, tolerance = 50):
+	def __init__(self, width, height, tolerance = 60):
 		self.__width = width
 		self.__height = height
 		self.__centerX = width / 2
@@ -137,9 +137,9 @@ class SpeechToText:
 	def listen(self) -> str:
 		print("[STT] Listening...")
 		with sr.Microphone() as input:
-			self.__speech.adjust_for_ambient_noise(input, duration=0.25)
+			self.__speech.adjust_for_ambient_noise(input, duration=0.3)
 			recorded_audio = self.__speech.listen(input)
-			phrase = self.__speech.recognize_whisper(recorded_audio).lower()
+			phrase = self.__speech.recognize_whisper(recorded_audio, language="english").lower()
 			print("[STT] Transcribed phrase \"" + phrase + "\"")
 			return SpeechToText.sanitize(phrase)
 	
@@ -309,6 +309,7 @@ def main():
 					break
 				case _:
 					tts.say("Sorry, we couldn't recognize what you said")
+		tts.say("We'll guide you to the right spot now. Please move your head slowly")
 
 		# Guide object to proper position
 		while(True):
