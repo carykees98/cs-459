@@ -103,7 +103,7 @@ class FrameQuadrants:
 				case "right":
 					return "Left"
 				case _:
-					if(target_x == "Left"):
+					if(target_x == "left"):
 						return "Left"
 					return "Right"
 		else: # move vertically once centered horizontally
