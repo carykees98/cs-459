@@ -1,6 +1,7 @@
-python-opencv
+opencv-python
 mediapipe
 pyttsx3
 speechrecognition
 openai-whisper
 soundfile
+pyaudio

@@ -87,7 +87,8 @@ class FrameQuadrants:
 		
 		return "middle_middle"
 	
-	# Gets the direction of movement required to position the user in a quadrant
+	# Gets the direction of movement required to position the object
+	# Opposite movement of the face program
 	def getMovement(current: str, target: str):
 		current_y = current.split("_", 2)[0]
 		current_x = current.split("_", 2)[1]
@@ -98,23 +99,23 @@ class FrameQuadrants:
 		if(current_x != target_x):
 			match current_x:
 				case "left":
-					return "Left"
-				case "right":
 					return "Right"
+				case "right":
+					return "Left"
 				case _:
 					if(target_x == "Left"):
-						return "Right"
-					return "Left"
+						return "Left"
+					return "Right"
 		else: # move vertically once centered horizontally
 			match current_y:
 				case "bottom":
-					return "Up"
-				case "top":
 					return "Down"
+				case "top":
+					return "Up"
 				case _:
 					if(target_y == "top"):
-						return "Up"
-					return "Down"
+						return "Down"
+					return "Up"
 
 # Text to speech wrapper
 class TextToSpeech:
@@ -140,8 +141,12 @@ class SpeechToText:
 			recorded_audio = self.__speech.listen(input)
 			phrase = self.__speech.recognize_whisper(recorded_audio).lower()
 			print("[STT] Transcribed phrase \"" + phrase + "\"")
-			return
-
+			return SpeechToText.sanitize(phrase)
+	
+	# Remove punctuation and leading/trailing whitespace from a transcription
+	def sanitize(phrase: str) -> str:
+		return phrase.replace(".", "").replace("!", "").replace("?", "").strip()
+	
 # Contains useful functions for sorting objects in the control thread
 class ObjectHelper:
 	# Gets the most apparent instance of an object in the scene
@@ -190,10 +195,10 @@ def doVisionThread(vision_data: VisionData):
 					scene_objects.append(
 						SceneObject(
 							category.category_name,
-							(box.origin_x + box.width) / 2,
-							(box.origin_y + box.height) / 2,
+							box.origin_x + box.width / 2,
+							box.origin_y + box.height / 2,
 							(box.width * box.height),
-							frame_quads.classify((box.origin_x + box.width) / 2, (box.origin_y + box.height) / 2)
+							frame_quads.classify(box.origin_x + box.width / 2, box.origin_y + box.height / 2)
 						)
 					)
 					# bounding box
@@ -304,17 +309,18 @@ def main():
 					break
 				case _:
 					tts.say("Sorry, we couldn't recognize what you said")
-		tts.say(target_quadrant)
 
 		# Guide object to proper position
 		while(True):
 			scene_objects: list[SceneObject] = vision_data.getDetections()
 			tracked_object: SceneObject = ObjectHelper.getMostApparent(scene_objects, target_object)
-			if(target_quadrant.quadrant == target_quadrant):
+			if(tracked_object.quadrant == target_quadrant):
 				break
-
-			print(tracked_object.quadrant)
-			tts.say(FrameQuadrants.getMovement(tracked_object.quadrant, target_quadrant))
+			if(tracked_object.name != "" and tracked_object.quadrant != ""):
+				print(tracked_object.x)
+				print(tracked_object.y)
+				print(tracked_object.quadrant)
+				tts.say(FrameQuadrants.getMovement(tracked_object.quadrant, target_quadrant))
 			sleep(0.1)
 
 		vision_data.tripSentinel()
