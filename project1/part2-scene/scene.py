@@ -230,6 +230,7 @@ def doVisionThread(vision_data: VisionData):
 		# Save image on request
 		if(vision_data.checkSaveImage()):
 			print("[Vision] Saving image...")
+			playsound('shutter.wav')
 			cv2.imwrite(datetime.now().strftime("%Y%m%d%H%M%S.jpg"), frame)
 			vision_data.resetSaveImage()
 
@@ -377,8 +378,6 @@ def main():
 		vision_data.requestSaveImage()
 		while(vision_data.checkSaveImage()):
 			sleep(0.1)
-		playsound('shutter.wav')
-		sleep(1)
 		tts.say("Done saving the picture")
 
 		# Clean up
