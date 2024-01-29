@@ -10,8 +10,8 @@ from mediapipe.tasks.python.vision import ObjectDetector, ObjectDetectorOptions,
 from mediapipe import Image, ImageFormat
 import pyttsx3
 import speech_recognition as sr
-from threading import Thread, Lock
 import winsound
+from threading import Thread, Lock
 from dataclasses import dataclass
 from datetime import datetime
 from time import sleep

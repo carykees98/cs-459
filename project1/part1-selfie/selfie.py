@@ -10,10 +10,10 @@ from mediapipe.tasks.python.vision import FaceDetector, FaceDetectorOptions
 from mediapipe import Image, ImageFormat
 import pyttsx3
 import speech_recognition as sr
+import winsound
 from threading import Thread, Lock
 from datetime import datetime
 from time import sleep
-from playsound import playsound
 
 #
 # ========== Class definitions ==========
@@ -171,7 +171,7 @@ class SpeechToText:
 		print("[STT] Listening...")
 		with sr.Microphone() as input:
 			self.__speech.adjust_for_ambient_noise(input, duration=0.3)
-			playsound('bump.wav')
+			winsound.PlaySound("bump.wav")
 			recorded_audio = self.__speech.listen(input)
 			phrase = self.__speech.recognize_whisper(
 				recorded_audio, language="english"
@@ -219,7 +219,7 @@ def doVisionThread(vision_data: VisionData):
 		# Save image on request
 		if(vision_data.checkSaveImage()):
 			print("[Vision] Saving image...")
-			playsound('bump.wav')
+			winsound.PlaySound("shutter.wav")
 			cv2.imwrite(datetime.now().strftime("%Y%m%d%H%M%S.jpg"), frame)
 			vision_data.resetSaveImage()
 
