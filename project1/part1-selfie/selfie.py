@@ -187,6 +187,7 @@ def doVisionThread(vision_data: VisionData):
 			Image(image_format=ImageFormat.SRGB, data=frame)
 		)
 
+		# Save image on request
 		if(vision_data.checkSaveImage()):
 			print("[Vision] Saving image...")
 			cv2.imwrite(datetime.now().strftime("%Y%m%d%H%M%S.jpg"), frame)
@@ -305,6 +306,7 @@ def main():
 					break
 				case _:
 					tts.say("Sorry, we didn't quite get that, please try again")
+		tts.say("We'll guide you to the right spot now, Please move your head slowly")
 
 		# Guide user to desired quadrant
 		while(vision_data.getQuadrant() != target_quadrant):
@@ -316,7 +318,7 @@ def main():
 			sleep(0.1)
 
 		# Take a picture
-		tts.say("Perfect. Taking a picture now")
+		tts.say("Perfect, Taking a picture now")
 		vision_data.requestSaveImage()
 		while(vision_data.checkSaveImage()):
 			sleep(0.1)

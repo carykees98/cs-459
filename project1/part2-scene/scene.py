@@ -6,6 +6,7 @@ import pyttsx3
 import speech_recognition as sr
 from threading import Thread, Lock
 from dataclasses import dataclass
+from datetime import datetime
 from time import sleep
 
 # ========== Class definitions ==========
@@ -25,6 +26,7 @@ class VisionData:
 		self.__detections_lock = Lock()
 		self.__sentinel = False
 		self.__available = False
+		self.__save_image_flag = False
 	
 	def setDetections(self, detections):
 		with self.__detections_lock:
@@ -45,6 +47,15 @@ class VisionData:
 
 	def isAvailable(self) -> bool:
 		return self.__available
+	
+	def requestSaveImage(self) -> None:
+		self.__save_image_flag = True
+	
+	def resetSaveImage(self) -> None:
+		self.__save_image_flag = False
+
+	def checkSaveImage(self) -> bool:
+		return self.__save_image_flag
 	
 # Provides functionality for classifying the quadrant that a face is in
 class FrameQuadrants:
@@ -99,13 +110,13 @@ class FrameQuadrants:
 		if(current_x != target_x):
 			match current_x:
 				case "left":
-					return "Right"
-				case "right":
 					return "Left"
+				case "right":
+					return "Right"
 				case _:
 					if(target_x == "left"):
-						return "Left"
-					return "Right"
+						return "Right"
+					return "Left"
 		else: # move vertically once centered horizontally
 			match current_y:
 				case "bottom":
@@ -185,6 +196,12 @@ def doVisionThread(vision_data: VisionData):
 		scene_detections = scene_model.detect(
 			Image(image_format=ImageFormat.SRGB, data=frame)
 		)
+
+		# Save image on request
+		if(vision_data.checkSaveImage()):
+			print("[Vision] Saving image...")
+			cv2.imwrite(datetime.now().strftime("%Y%m%d%H%M%S.jpg"), frame)
+			vision_data.resetSaveImage()
 
 		# Screen detections and populate scene object list
 		scene_objects: list[SceneObject] = []
@@ -270,7 +287,7 @@ def main():
 				scene_names.append(o.name)
 
 		# Have user pick an object
-		tts.say("I see: " + " ".join(scene_names) + ". What would you like to take a picture of?")
+		tts.say("I see: " + " ".join(scene_names) + ", What would you like to take a picture of?")
 		target_object: str = ""
 		while(True):
 			user_choice: str = stt.listen()
@@ -282,7 +299,7 @@ def main():
 		tts.say(target_object)
 
 		# Have user pick a position
-		tts.say("Where would you like the " + target_object + "to be? You can say things like, top left, bottom right, center")
+		tts.say("Where would you like the " + target_object + " to be? You can say things like, top left, bottom right, center")
 		target_quadrant: str = ""
 		while(True):
 			user_choice: str = stt.listen()
@@ -309,7 +326,7 @@ def main():
 					break
 				case _:
 					tts.say("Sorry, we couldn't recognize what you said")
-		tts.say("We'll guide you to the right spot now. Please move your head slowly")
+		tts.say("We'll guide your camera to the right spot now, Please move it slowly")
 
 		# Guide object to proper position
 		while(True):
@@ -324,9 +341,19 @@ def main():
 				tts.say(FrameQuadrants.getMovement(tracked_object.quadrant, target_quadrant))
 			sleep(0.1)
 
+		# Take a picture
+		tts.say("Perfect, Taking a picture now")
+		vision_data.requestSaveImage()
+		while(vision_data.checkSaveImage()):
+			sleep(0.1)
+		tts.say("Done saving the picture")
+
+		print("[Control] Done")
+
+		# Clean up
 		vision_data.tripSentinel()
 		vision_thread.join()
-		print("[Control] Done")
+		
 
 	except:
 		print("[Shutdown] Stopping vision thread...")
