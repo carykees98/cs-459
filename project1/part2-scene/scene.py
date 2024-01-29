@@ -1,3 +1,9 @@
+"""
+	selfie.py
+	Project 1, Part 2: Static Scene Application
+	CS459 Human Computer Interaction
+	Cary Keesler, Juno Meifert, Andrew Tringali
+"""
 import cv2
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import ObjectDetector, ObjectDetectorOptions, RunningMode
@@ -361,9 +367,6 @@ def main():
 			if(tracked_object.quadrant == target_quadrant):
 				break
 			if(tracked_object.name != "" and tracked_object.quadrant != ""):
-				print(tracked_object.x)
-				print(tracked_object.y)
-				print(tracked_object.quadrant)
 				tts.say(FrameQuadrants.getMovement(tracked_object.quadrant, target_quadrant))
 			sleep(0.1)
 

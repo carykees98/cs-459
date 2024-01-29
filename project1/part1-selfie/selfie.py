@@ -1,3 +1,9 @@
+"""
+	selfie.py
+	Project 1, Part 1: Selfie Application
+	CS459 Human Computer Interaction
+	Cary Keesler, Juno Meifert, Andrew Tringali
+"""
 import cv2
 from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python.vision import FaceDetector, FaceDetectorOptions
@@ -302,13 +308,14 @@ def main():
 		# Guide user to frame
 		if(vision_data.getQuadrant() == "none"):
 			tts.say("Your face isn't in frame")
-			tts.say("Try moving your head slowly up down left and right")
+			tts.say("Your face isn't in frame. Try moving your head slowly " + 
+		   			"left and right, then up and down")
 			while(vision_data.getQuadrant() == "none"):
 				sleep(0.1)
 		
 		# Prompt user for face location
 		tts.say("You're in frame! Where would you like your face to be? " + 
-		  		"You can say things like, top left, bottom right, center")
+		  		"You can say things like, top left, bottom right, or center")
 		target_quadrant: str = ""
 		while(True):
 			user_choice: str = stt.listen()
