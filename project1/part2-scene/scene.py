@@ -238,7 +238,7 @@ def doVisionThread(vision_data: VisionData):
 		scene_objects: list[SceneObject] = []
 		for detection in scene_detections.detections:
 			for category in detection.categories:
-				if category.score > 0.4:
+				if category.score > 0.35:
 					box = detection.bounding_box
 					scene_objects.append(
 						SceneObject(

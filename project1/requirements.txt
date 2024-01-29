@@ -5,3 +5,5 @@ speechrecognition
 openai-whisper
 soundfile
 pyaudio
+wheel
+playsound
