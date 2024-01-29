@@ -9,8 +9,11 @@ from dataclasses import dataclass
 from datetime import datetime
 from time import sleep
 
+#
 # ========== Class definitions ==========
+#
 
+# Represents an object that has been detected in the scene
 @dataclass
 class SceneObject:
 	name: str
@@ -19,7 +22,7 @@ class SceneObject:
 	area: int
 	quadrant: str
 
-# Data to be shared between the main thread and the vision thread
+# Data to be synchronized between the control thread and the vision thread
 class VisionData:
 	def __init__(self):
 		self.__detections: list[SceneObject] = []
@@ -28,36 +31,45 @@ class VisionData:
 		self.__available = False
 		self.__save_image_flag = False
 	
+	# Publish detected objects for control thread
 	def setDetections(self, detections):
 		with self.__detections_lock:
 			self.__detections = detections
 	
+	# Get detected objects
 	def getDetections(self):
 		with self.__detections_lock:
 			return self.__detections
 	
+	# Trip sentinel to shut down vision thread
 	def tripSentinel(self) -> None:
 		self.__sentinel = True
 
+	# Check sentinel (for use by vision thread)
 	def checkSentinel(self) -> bool:
 		return self.__sentinel
 	
+	# Signal that vision data is available
 	def signalAvailable(self) -> None:
 		self.__available = True
 
+	# Check if vision data is available
 	def isAvailable(self) -> bool:
 		return self.__available
 	
+	# Request an image capture
 	def requestSaveImage(self) -> None:
 		self.__save_image_flag = True
 	
+	# Reset the image capture request flag
 	def resetSaveImage(self) -> None:
 		self.__save_image_flag = False
 
+	# Check the image capture request flag
 	def checkSaveImage(self) -> bool:
 		return self.__save_image_flag
 	
-# Provides functionality for classifying the quadrant that a face is in
+# Provides functionality for classifying the quadrant that an object is in
 class FrameQuadrants:
 	def __init__(self, width, height, tolerance = 60):
 		self.__width = width
@@ -66,12 +78,15 @@ class FrameQuadrants:
 		self.__centerY = height / 2
 		self.__tolerance = tolerance
 
+	# Gets the width of the frame
 	def getWidth(self) -> int:
 		return self.__width
 	
+	# Gets the height of the frame
 	def getHeight(self) -> int:
 		return self.__height
 
+	# Gets the quadrant that an object is in
 	def classify(self, x, y) -> str:
 		# left half
 		if(x < self.__centerX - self.__tolerance):
@@ -150,7 +165,9 @@ class SpeechToText:
 		with sr.Microphone() as input:
 			self.__speech.adjust_for_ambient_noise(input, duration=0.3)
 			recorded_audio = self.__speech.listen(input)
-			phrase = self.__speech.recognize_whisper(recorded_audio, language="english").lower()
+			phrase = self.__speech.recognize_whisper(
+				recorded_audio, language="english"
+			).lower()
 			print("[STT] Transcribed phrase \"" + phrase + "\"")
 			return SpeechToText.sanitize(phrase)
 	
@@ -169,9 +186,14 @@ class ObjectHelper:
 				candidate_obj = o
 		return candidate_obj
 
+#
 # ========== End class definitions ==========
+#
 
-# Vision thread tasks
+#
+# Called by vision thread when it is started
+# Shared vision data instance should be passed to it
+#
 def doVisionThread(vision_data: VisionData):
 	print("[Vision] Starting vision thread...")
 
@@ -264,7 +286,11 @@ def doVisionThread(vision_data: VisionData):
 			cv2.destroyAllWindows()
 			return
 
-# Main thread
+#
+# Control (main) thread tasks.
+# Handles startup and shutdown of the vision thread, as well as user 
+# interaction.
+#
 def main():
 	try:
 		print("[Control] Starting scene application.")
@@ -348,12 +374,11 @@ def main():
 			sleep(0.1)
 		tts.say("Done saving the picture")
 
-		print("[Control] Done")
-
 		# Clean up
+		print("[Shutdown] Stopping vision thread...")
 		vision_data.tripSentinel()
 		vision_thread.join()
-		
+		print("[Shutdown] Done.")
 
 	except:
 		print("[Shutdown] Stopping vision thread...")
