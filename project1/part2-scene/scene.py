@@ -1,5 +1,5 @@
 """
-	selfie.py
+	scene.py
 	Project 1, Part 2: Static Scene Application
 	CS459 Human Computer Interaction
 	Cary Keesler, Juno Meifert, Andrew Tringali
