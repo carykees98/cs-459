@@ -14,6 +14,7 @@ from threading import Thread, Lock
 from dataclasses import dataclass
 from datetime import datetime
 from time import sleep
+from playsound import playsound
 
 #
 # ========== Class definitions ==========
@@ -170,6 +171,7 @@ class SpeechToText:
 		print("[STT] Listening...")
 		with sr.Microphone() as input:
 			self.__speech.adjust_for_ambient_noise(input, duration=0.3)
+			playsound('bump.wav')
 			recorded_audio = self.__speech.listen(input)
 			phrase = self.__speech.recognize_whisper(
 				recorded_audio, language="english"
@@ -375,6 +377,8 @@ def main():
 		vision_data.requestSaveImage()
 		while(vision_data.checkSaveImage()):
 			sleep(0.1)
+		playsound('shutter.wav')
+		sleep(1)
 		tts.say("Done saving the picture")
 
 		# Clean up
