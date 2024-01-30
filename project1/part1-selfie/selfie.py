@@ -174,10 +174,23 @@ class SpeechToText:
 			winsound.PlaySound("sounds/bump.wav", winsound.SND_FILENAME)
 			recorded_audio = self.__speech.listen(input)
 			phrase = self.__speech.recognize_whisper(
-				recorded_audio, language="english"
+				recorded_audio, language="english", model="base.en"
 			).lower()
 			print("[STT] Transcribed phrase \"" + phrase + "\"")
 			return SpeechToText.__sanitize(phrase)
+	
+	# Performs a dry run of speech transcription
+	def dryRun(self) -> str:
+		with sr.Microphone() as input:
+			print("[STT] Starting speech transcription dry run...")
+			try:
+				self.__speech.recognize_whisper(
+					sr.AudioData(bytearray(), 44100, 2), 
+					language="english", model="base.en"
+				)
+			except:
+				pass
+			print("[STT] Finished dry run.")
 	
 	# Remove punctuation and leading/trailing whitespace from a transcription
 	def __sanitize(phrase: str) -> str:
@@ -305,6 +318,7 @@ def main():
 
 		# Wait on vision thread
 		tts.say("Just a second while the camera starts up")
+		stt.dryRun()
 		while(not vision_data.isAvailable()):
 			sleep(1.0)
 
