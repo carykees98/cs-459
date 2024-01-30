@@ -128,6 +128,7 @@ class FrameQuadrants:
 		target_y = target.split("_", 2)[0]
 		target_x = target.split("_", 2)[1]
 
+		print(current)
 		# move horizontally first
 		if(current_x != target_x):
 			match current_x:
@@ -322,7 +323,7 @@ def main():
 				scene_names.append(o.name)
 
 		# Have user pick an object
-		tts.say("I see: " + " ".join(scene_names) + ", What would you like to take a picture of?")
+		tts.say("I see: " + ", ".join(scene_names) + ", What would you like to take a picture of?")
 		target_object: str = ""
 		while(True):
 			user_choice: str = stt.listen()
@@ -349,7 +350,7 @@ def main():
 					break
 				case "bottom left":
 					tts.say("Bottom left")
-					target_quadrant = "bottom_right"
+					target_quadrant = "bottom_left"
 					break
 				case "bottom right":
 					tts.say("Bottom right")

@@ -333,7 +333,7 @@ def main():
 					break
 				case "bottom left":
 					tts.say("Bottom left")
-					target_quadrant = "bottom_right"
+					target_quadrant = "bottom_left"
 					break
 				case "bottom right":
 					tts.say("Bottom right")
