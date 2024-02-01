@@ -324,7 +324,6 @@ def main():
 
 		# Guide user to frame
 		if(vision_data.getQuadrant() == "none"):
-			tts.say("Your face isn't in frame")
 			tts.say("Your face isn't in frame. Try moving your head slowly " + 
 		   			"left and right, then up and down")
 			while(vision_data.getQuadrant() == "none"):
@@ -365,12 +364,15 @@ def main():
 		# Guide user to desired quadrant
 		while(vision_data.getQuadrant() != target_quadrant):
 			current_quadrant: str = vision_data.getQuadrant()
-			vision_data.setDisplayText(
-				FrameQuadrants.getMovement(current_quadrant, target_quadrant)
-			)
-			tts.say(
-				FrameQuadrants.getMovement(current_quadrant, target_quadrant)
-			)
+			if(current_quadrant == "none"):
+				tts.say("You've moved out of the frame, please move back")
+			else:
+				vision_data.setDisplayText(
+					FrameQuadrants.getMovement(current_quadrant, target_quadrant)
+				)
+				tts.say(
+					FrameQuadrants.getMovement(current_quadrant, target_quadrant)
+				)
 			sleep(0.1)
 
 		# Take a picture
