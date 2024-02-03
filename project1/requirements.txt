@@ -1,9 +1,8 @@
+wheel
+pyaudio
+soundfile
 opencv-python
 mediapipe
 pyttsx3
 speechrecognition
 openai-whisper
-soundfile
-pyaudio
-wheel
-playsound
