@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CS459 Color Test Application</title>
+        <link rel="stylesheet" href="tester.css">
+    </head>
+    <body>
+        <div class="application_container">
+            <div class="color_box_container">
+                <h1>CS459 Test App 1</h1>
+                <br>
+                <h3>Select the squares that appear as same color as the one below.</h3>
+                <div class="color_box" id="COLOR_BOX_0" onclick="handleClick(0)"></div>
+                <div class="color_box" id="COLOR_BOX_1" onclick="handleClick(1)"></div>
+                <div class="color_box" id="COLOR_BOX_2" onclick="handleClick(2)"></div>
+                <div class="color_box" id="COLOR_BOX_3" onclick="handleClick(3)"></div>
+                <div class="color_box" id="COLOR_BOX_4" onclick="handleClick(4)"></div>
+                <div class="color_box" id="COLOR_BOX_5" onclick="handleClick(5)"></div><br>
+                <div class="color_box" id="TARGET_BOX"></div>
+            </div>
+            <div class="controls_container">
+                <button onclick="handleNext()">Next color</button>
+            </div>
+            <br>
+            <button onclick="handleReset()">Reset</button>
+
+            <p id="JSON_DISPLAY"></p>
+        </div>
+
+        <script src="color.js"></script>
+        <script src="tester.js"></script>
+    </body>
+</html>
