@@ -1,7 +1,7 @@
 /**
  * @type {[[Number]]}
  */
-const TEST_COLORS = [
+const BUS_COLORS = [
     [255,0,0],
     [127,96,0],
     [56,87,35],
@@ -9,12 +9,6 @@ const TEST_COLORS = [
     [0,47,142],
     [112, 48, 160]
 ]
-
-/**
- * @type {Number}
- */
-const TEST_HUE_SHIFT = 0.05;
-
 
 /**
  * @type {[HTMLElement]}
@@ -47,19 +41,42 @@ var CURRENT_COLOR;
  */
 var SAVED_TRIALS = [];
 
+/**
+ * @type {Number}
+ */
+var CLOCK = 0.0;
+
 class Trial {
-    colors;
-    selections;
+    /**
+     * @type {Number}
+     */
+    time;
 
     /**
-     * @param {[[Number]]} colors 
-     * @param {[Number]} selections 
+     * @type {String}
      */
-    constructor(colors, selections) {
-        this.colors = colors;
-        this.selections = selections;
+    target_color;
+
+    /**
+     * @type {String}
+     */
+    selected_color;
+
+    /**
+     * @param {Number} time
+     * @param {String} target_color
+     * @param {String} selected_color
+     */
+    constructor(time, target_color, selected_color) {
+        this.time = time;
+        this.target_color = target_color;
+        this.selected_color = selected_color;
     }
 }
+
+function tickClock() { CLOCK += 0.01; }
+
+function rand(max) { return Math.floor(Math.random() * max); }
 
 function bumpTargetBox() {
     TARGET_BOX.animate(
@@ -75,7 +92,6 @@ function bumpTargetBox() {
         }
     );
 }
-
 
 /**
  * @param {[[Number]]} colors 
@@ -96,41 +112,22 @@ function setTargetBox(color) {
             `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
 }
 
-function setColorRange(color, hue_shift) {
-    setColorBoxes(getSwatch(color, hue_shift));
-    setTargetBox(color);
-}
-
-function getSwatch(color, hue_shift) {
-    shifted_colors = []
-    for(var i = -3; i <= 3; i++) {
-        if(i != 0) {
-            shifted_colors.push(shiftHue(color, i * hue_shift));
-        }
-    }
-    return shifted_colors;
-}
-
 function handleClick(box_id) {
-    if(COLOR_BOXES[box_id].classList.contains("box_selected")) {
-        COLOR_BOXES[box_id].classList.remove("box_selected");
-    } else {
-        COLOR_BOXES[box_id].classList.add("box_selected");
-    }
-    
-}
-
-function resetSelected() {
-    for(var i = 0; i < 6; i++) {
-        if(COLOR_BOXES[i].classList.contains("box_selected")) {
-            COLOR_BOXES[i].classList.remove("box_selected");
-        }
-    }
+    target_color = TARGET_BOX.style.backgroundColor;
+    selected_color = COLOR_BOXES[box_id].style.backgroundColor;
+    console.log(`Time: ${CLOCK}`);
+    console.log(`Target color: ${target_color}`)
+    console.log(`Selected color: ${selected_color}`);
+    SAVED_TRIALS.push(new Trial(CLOCK, target_color, selected_color));
+    JSON_DISPLAY.innerHTML = JSON.stringify(SAVED_TRIALS);
+    setTargetBox(BUS_COLORS[rand(6)]);
+    bumpTargetBox();
+    CLOCK = 0.0;
 }
 
 function handleNext() {
     // save data from this trial
-    colors = getSwatch(TEST_COLORS[CURRENT_COLOR], TEST_HUE_SHIFT);
+    colors = getSwatch(BUS_COLORS[CURRENT_COLOR], TEST_HUE_SHIFT);
     selections = [];
     for(var i = 0; i < 6; i++) {
         if(COLOR_BOXES[i].classList.contains("box_selected")) {
@@ -142,11 +139,10 @@ function handleNext() {
 
     // advance to next trial
     CURRENT_COLOR++;
-    if(CURRENT_COLOR >= TEST_COLORS.length) {
+    if(CURRENT_COLOR >= BUS_COLORS.length) {
         CURRENT_COLOR = 0;
     }
-    setColorRange(TEST_COLORS[CURRENT_COLOR], TEST_HUE_SHIFT);
-    bumpTargetBox();
+    setColorRange(BUS_COLORS[CURRENT_COLOR], TEST_HUE_SHIFT);
     resetSelected();
 }
 
@@ -156,8 +152,9 @@ function handleReset() {
 }
 
 function main() {
-    CURRENT_COLOR = 0;
-    setColorRange(TEST_COLORS[CURRENT_COLOR], TEST_HUE_SHIFT);
+    setColorBoxes(BUS_COLORS);
+    setInterval(tickClock, 10);
+    setTargetBox(BUS_COLORS[rand(6)]);
 }
 
 /* ===== On page load ===== */
