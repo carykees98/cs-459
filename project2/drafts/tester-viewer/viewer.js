@@ -9,22 +9,6 @@ const TEST_DATA = `[{"target_color":[255,0,0],"colors":[[255,0,230],[255,0,153],
 const TEST_HUE_SHIFT = 0.05;
 
 /**
- * @type {[HTMLElement]}
- */
-const COLOR_BOXES = [];
-COLOR_BOXES.push(document.getElementById("COLOR_BOX_0"));
-COLOR_BOXES.push(document.getElementById("COLOR_BOX_1"));
-COLOR_BOXES.push(document.getElementById("COLOR_BOX_2"));
-COLOR_BOXES.push(document.getElementById("COLOR_BOX_3"));
-COLOR_BOXES.push(document.getElementById("COLOR_BOX_4"));
-COLOR_BOXES.push(document.getElementById("COLOR_BOX_5"));
-
-/**
- * @type {HTMLElement}
- */
-const TARGET_BOX = document.getElementById("TARGET_BOX");
-
-/**
  * @type {HTMLElement}
  */
 const JSON_DISPLAY = document.getElementById("JSON_DISPLAY");
@@ -74,26 +58,37 @@ function bumpTargetBox() {
 
 /**
  * @param {[[Number]]} colors 
+ * @param {Number} trial
  */
-function setColorBoxes(colors) {
+function setColorBoxes(colors, trial) {
     for(var i = 0; i < 6; i++) {
         let color = colors[i];
-        COLOR_BOXES[i].style.backgroundColor = 
+        document.getElementById(`CB_${trial}_${i}`).style.backgroundColor = 
                 `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+    }
+}
+
+function setSelected(color, trial) {
+    for(var i = 0; i < 6; i++) {
+        let cb_color = document.getElementById(`CB_${trial}_${i}`).style.backgroundColor;
+        let sel_color = `rgb(${color[0]}, ${color[1]}, ${color[2]})`
+        if(cb_color == sel_color) {
+            document.getElementById(`CB_${trial}_${i}`).classList.add("box_selected");
+        }
     }
 }
 
 /**
  * @param {[Number]} color
  */
-function setTargetBox(color) {
-    TARGET_BOX.style.backgroundColor = 
+function setTargetBox(color, trial) {
+    document.getElementById(`TB_${trial}`).style.backgroundColor = 
             `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
 }
 
-function setColorRange(color, hue_shift) {
-    setColorBoxes(getSwatch(color, hue_shift));
-    setTargetBox(color);
+function setColorRange(color, hue_shift, trial) {
+    setColorBoxes(getSwatch(color, hue_shift), trial);
+    setTargetBox(color, trial);
 }
 
 function getSwatch(color, hue_shift) {
@@ -104,23 +99,6 @@ function getSwatch(color, hue_shift) {
         }
     }
     return shifted_colors;
-}
-
-function handleClick(box_id) {
-    if(COLOR_BOXES[box_id].classList.contains("box_selected")) {
-        COLOR_BOXES[box_id].classList.remove("box_selected");
-    } else {
-        COLOR_BOXES[box_id].classList.add("box_selected");
-    }
-    
-}
-
-function resetSelected() {
-    for(var i = 0; i < 6; i++) {
-        if(COLOR_BOXES[i].classList.contains("box_selected")) {
-            COLOR_BOXES[i].classList.remove("box_selected");
-        }
-    }
 }
 
 function handleNext() {
@@ -146,34 +124,24 @@ function handleNext() {
     resetSelected();
 }
 
-function handleReset() {
-    if(window.confirm("THIS WILL RESET ALL COLLECTED DATA! Continue?")) {
-        SAVED_TRIALS.length = 0;
-        CURRENT_COLOR = 0;
-        setColorRange(TEST_COLORS[CURRENT_COLOR], TEST_HUE_SHIFT);
-        bumpTargetBox();
-        resetSelected();
-        JSON_DISPLAY.innerHTML = JSON.stringify(SAVED_TRIALS);
-    }
-}
-
 function main() {
     //CURRENT_COLOR = 0;
     //setColorRange(TEST_COLORS[CURRENT_COLOR], TEST_HUE_SHIFT);
     td = JSON.parse(TEST_DATA);
     elements_html = ""
-    console.log(td);
-    trial_id = 0
     for(i in td) {
         for(j = 0; j < 6; j++) {
-            elements_html += `<div class="color_box" id="CB_${trial_id}_" onclick="handleClick(0)"></div> `;
+            elements_html += `<div class="color_box" id="CB_${i}_${j}"></div>`;
         }
+        elements_html += `<br><div class="color_box" id="TB_${i}"></div><br><br>`
         elements_html += `<br><br>`
-        trial_id++;
     }
     document.getElementById("COLOR_BOXES").innerHTML = elements_html;
     for(i in td) {
-        
+        setColorRange(td[i].target_color, TEST_HUE_SHIFT, i);
+        for(j in td[i].selections) {
+            setSelected(td[i].selections[j], i);
+        }
     }
 }
 

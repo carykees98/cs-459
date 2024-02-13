@@ -28,15 +28,6 @@ body {
     height: 120px;
 }
 
-.color_box:hover {
-    cursor: pointer;
-    box-shadow: inset 5px 5px black, inset -5px -5px black, 3px 3px 5px black;
-}
-
-#TARGET_BOX {
-    box-shadow: inset 5px 5px black, inset -5px -5px black;
-}
-
 .box_selected {
     box-shadow: inset 5px 5px black, inset -5px -5px black;
 }
