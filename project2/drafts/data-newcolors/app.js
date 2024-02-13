@@ -147,8 +147,10 @@ function handleNext() {
 }
 
 function handleReset() {
-    SAVED_TRIALS.length = 0;
-    JSON_DISPLAY.innerHTML = JSON.stringify(SAVED_TRIALS);
+    if(window.confirm("THIS WILL RESET ALL COLLECTED DATA! Continue?")) {
+        SAVED_TRIALS.length = 0;
+        JSON_DISPLAY.innerHTML = JSON.stringify(SAVED_TRIALS);
+    }
 }
 
 function main() {

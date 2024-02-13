@@ -2,12 +2,21 @@
  * @type {[[Number]]}
  */
 const TEST_COLORS = [
-    [255,0,0],
-    [127,96,0],
-    [56,87,35],
+    // Original colors
+    [255,0,0],      // Red
+    [127,96,0],     // Brown
+    [56,87,35],     // Green
+    [255,255,0],    // Yellow
+    [0,47,142],     // Blue
+    [112, 48, 160], // Purple
+    // New colors (Try 1)
+    [155,0,0],
+    [125,69,0],
+    [0,158,115],
     [255,255,0],
-    [0,47,142],
-    [112, 48, 160]
+    [0,114,178],
+    [204, 121, 167],
+    // ...
 ]
 
 /**
@@ -48,14 +57,17 @@ var CURRENT_COLOR;
 var SAVED_TRIALS = [];
 
 class Trial {
+    target_color;
     colors;
     selections;
 
     /**
+     * @param {[Number]} target_color
      * @param {[[Number]]} colors 
-     * @param {[Number]} selections 
+     * @param {[[Number]]} selections 
      */
-    constructor(colors, selections) {
+    constructor(target_color, colors, selections) {
+        this.target_color = target_color;
         this.colors = colors;
         this.selections = selections;
     }
@@ -130,6 +142,7 @@ function resetSelected() {
 
 function handleNext() {
     // save data from this trial
+    target_color = TEST_COLORS[CURRENT_COLOR];
     colors = getSwatch(TEST_COLORS[CURRENT_COLOR], TEST_HUE_SHIFT);
     selections = [];
     for(var i = 0; i < 6; i++) {
@@ -137,7 +150,7 @@ function handleNext() {
             selections.push(colors[i]);
         }
     }
-    SAVED_TRIALS.push(new Trial(colors, selections));
+    SAVED_TRIALS.push(new Trial(target_color, colors, selections));
     JSON_DISPLAY.innerHTML = JSON.stringify(SAVED_TRIALS);
 
     // advance to next trial
@@ -151,8 +164,10 @@ function handleNext() {
 }
 
 function handleReset() {
-    SAVED_TRIALS.length = 0;
-    JSON_DISPLAY.innerHTML = JSON.stringify(SAVED_TRIALS);
+    if(window.confirm("THIS WILL RESET ALL COLLECTED DATA! Continue?")) {
+        SAVED_TRIALS.length = 0;
+        JSON_DISPLAY.innerHTML = JSON.stringify(SAVED_TRIALS);
+    }
 }
 
 function main() {
