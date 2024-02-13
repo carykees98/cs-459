@@ -166,6 +166,10 @@ function handleNext() {
 function handleReset() {
     if(window.confirm("THIS WILL RESET ALL COLLECTED DATA! Continue?")) {
         SAVED_TRIALS.length = 0;
+        CURRENT_COLOR = 0;
+        setColorRange(TEST_COLORS[CURRENT_COLOR], TEST_HUE_SHIFT);
+        bumpTargetBox();
+        resetSelected();
         JSON_DISPLAY.innerHTML = JSON.stringify(SAVED_TRIALS);
     }
 }
